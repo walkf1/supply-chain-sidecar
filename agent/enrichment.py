@@ -24,14 +24,21 @@ SYSTEM_PROMPT = (
 )
 
 
-def collect_signals(manifest: dict) -> dict:
-    """Fetch MCP registry signals and score them. No Gemini call."""
+def collect_signals(manifest: dict, _domain_age_override: int | None = None) -> dict:
+    """Fetch MCP registry signals and score them. No Gemini call.
+
+    _domain_age_override: inject a domain age (days) directly — used in demo scenarios
+    where the attacker domain is fictional and RDAP returns nothing.
+    """
     name = manifest.get("name", "unknown")
     version = manifest.get("version", "unknown")
     domain = _extract_domain(manifest)
 
     git_result = get_git_tag(name, version)
-    domain_result = get_domain_age(domain) if domain else {"age_days": None, "domain": None}
+    if _domain_age_override is not None and domain:
+        domain_result = {"age_days": _domain_age_override, "domain": domain}
+    else:
+        domain_result = get_domain_age(domain) if domain else {"age_days": None, "domain": None}
     method_result = get_publish_method(name, version)
 
     signals = {

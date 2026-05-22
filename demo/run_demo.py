@@ -64,7 +64,8 @@ def run():
 
         # Stage 1: MCP evidence only
         print("  [Stage 1] collect_signals() — registry evidence, no LLM")
-        collected = collect_signals(manifest)
+        domain_age_override = s.get("domain_age_override")
+        collected = collect_signals(manifest, _domain_age_override=domain_age_override)
         sig = collected["signals"]
         print(f"    git_tag_status  : {sig.get('git_tag_status', 'n/a')}")
         print(f"    git_tag_exists  : {sig.get('git_tag_exists', 'n/a')}")

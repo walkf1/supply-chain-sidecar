@@ -45,7 +45,9 @@ def _get_cached(key: str) -> dict | None:
         if time.time() - doc.get("cached_at", 0) < CACHE_TTL_SECONDS:
             return doc
     except Exception as e:
-        print(f"[elastic] cache read miss ({key}): {e}")
+        msg = str(e)
+        if "NotFoundError" not in msg and "404" not in msg:
+            print(f"[elastic] cache read miss ({key}): {msg}")
     return None
 
 

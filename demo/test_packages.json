@@ -84,6 +84,23 @@
         "maintainers": [{"name": "jdalton"}, {"name": "mathias"}, {"name": "bnjmnt4n"}],
         "license": "MIT"
       }
+    },
+    {
+      "id": "lodash_domain_attack",
+      "label": "lodash@4.17.23 — domain-age hijack (Axios March 2026 pattern)",
+      "description": "Hijacked lodash release. Attacker registered lodash.dev 3 days before publish and injected it as the homepage. No git tag. Gemini sees a plausible manifest. MCP fetches domain age: 3 days — hard block.",
+      "expected": "SAFE_FROM_GEMINI_MALICIOUS_FROM_MCP",
+      "domain_age_override": 3,
+      "manifest": {
+        "name": "lodash",
+        "version": "4.17.23",
+        "description": "Lodash modular utilities.",
+        "homepage": "https://lodash.dev",
+        "scripts": {"test": "echo test"},
+        "dependencies": {},
+        "maintainers": [{"name": "jdalton"}, {"name": "mathias"}, {"name": "bnjmnt4n"}],
+        "license": "MIT"
+      }
     }
   ]
 }
