@@ -7,12 +7,21 @@ Two detection paths:
 
 import os
 from flask import Flask, request, jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from agent.gemini_classifier import classify
 from agent.enrichment import enrich, collect_signals
 from agent.confidence import get_thresholds
 
 app = Flask(__name__)
 SIDECAR_MODE = os.getenv("SIDECAR_MODE", "balanced")
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["100/day", "10/minute"],
+    storage_uri="memory://",
+)
 
 # Packages targeted by version-jump attacks — MCP evidence always runs
 HIGH_REP = {"lodash", "axios", "chalk", "express", "react", "typescript", "webpack", "babel"}
