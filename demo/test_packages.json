@@ -2,9 +2,10 @@
   "scenarios": [
     {
       "id": "axios_clean",
-      "label": "axios@1.14.0 — clean release",
-      "description": "Legitimate axios release. Published via GitHub Actions OIDC. Corresponding git tag exists. No dependency changes.",
+      "label": "axios@1.14.0 — clean release (wild type)",
+      "description": "Wild type. Legitimate axios release. git head 46bee3de confirmed live from npm registry. Published via manual token — consistent with all prior axios releases. No dependency changes. Source: Aikido, March 2026.",
       "expected": "SAFE",
+      "source": "https://www.aikido.dev/blog/axios-npm-compromised-maintainer-hijacked-rat",
       "manifest": {
         "name": "axios",
         "version": "1.14.0",
@@ -29,9 +30,11 @@
     },
     {
       "id": "axios_attack",
-      "label": "axios@1.14.1 — manifest-only hijack (Axios March 2026 pattern)",
-      "description": "Hijacked axios release. No git tag. Published manually with stolen npm token. Phantom dependency plain-crypto-js injected. Gemini catches the explicit signal (phantom dep). MCP confirms no git tag.",
+      "label": "axios@1.14.1 — manifest-only hijack (mutant, March 2026)",
+      "description": "Mutant. Real attack — npm removed this version after the incident. Maintainer account jasonsaayman compromised, email changed to ifstap@proton.me. Single mutation from wild type: plain-crypto-js@^4.2.1 injected as phantom dependency. No git tag (confirmed live: npm returns 404). Published via unknown method. C2: sfrclak.com. Source: Aikido, March 2026.",
       "expected": "MALICIOUS",
+      "source": "https://www.aikido.dev/blog/axios-npm-compromised-maintainer-hijacked-rat",
+      "mutation_description": "Single dependency injected: plain-crypto-js@^4.2.1. Pre-staged 18h earlier by attacker account nrwise. Postinstall hook deploys cross-platform RAT.",
       "manifest": {
         "name": "axios",
         "version": "1.14.1",
@@ -57,8 +60,8 @@
     },
     {
       "id": "lodash_clean",
-      "label": "lodash@4.17.21 — clean release",
-      "description": "Legitimate lodash release. Git tag v4.17.21 exists. No author field — consistent with all prior lodash releases.",
+      "label": "lodash@4.17.21 — clean release (wild type)",
+      "description": "Wild type. Legitimate lodash release. Git tag v4.17.21 confirmed in registry. No author field — consistent with all prior lodash releases. Published via manual token.",
       "expected": "SAFE",
       "manifest": {
         "name": "lodash",
@@ -72,9 +75,10 @@
     },
     {
       "id": "lodash_attack",
-      "label": "lodash@4.17.22 — version-jump hijack",
-      "description": "Hijacked lodash release. No git tag for v4.17.22. Published manually. No suspicious content in manifest — Gemini sees nothing. Attack signal is entirely in registry metadata. MCP override blocks it.",
+      "label": "lodash@4.17.22 — version-jump hijack (mutant)",
+      "description": "Mutant. Fictional version modelling the version-jump hijack pattern. Single mutation: no git tag for this version. Manifest content is identical to wild type — Gemini sees nothing suspicious. Attack signal is entirely in registry metadata. MCP override blocks it.",
       "expected": "SAFE_FROM_GEMINI_MALICIOUS_FROM_MCP",
+      "mutation_description": "Git tag absent for v4.17.22. Published via unknown method. No manifest content change — demonstrates signal visibility boundary: model cannot detect this from package.json alone.",
       "manifest": {
         "name": "lodash",
         "version": "4.17.22",
@@ -87,10 +91,11 @@
     },
     {
       "id": "lodash_domain_attack",
-      "label": "lodash@4.17.23 — domain-age hijack (Axios March 2026 pattern)",
-      "description": "Hijacked lodash release. Attacker registered lodash.dev 3 days before publish and injected it as the homepage. No git tag. Gemini sees a plausible manifest. MCP fetches domain age: 3 days — hard block.",
+      "label": "lodash@4.17.23 — domain-age hijack (mutant, Axios March 2026 pattern)",
+      "description": "Mutant. Models the domain registration pattern from the real Axios attack (sfrclak.com registered shortly before publish). Two mutations from wild type: attacker-registered homepage domain injected, no git tag. Domain age injected as 3 days — simulating the Elastic cache hit that would occur in production for a real attacker domain. Gemini sees a plausible manifest. MCP blocks on domain age alone.",
       "expected": "SAFE_FROM_GEMINI_MALICIOUS_FROM_MCP",
       "domain_age_override": 3,
+      "mutation_description": "homepage field injected with attacker-registered domain (3 days old). Git tag absent. Models sfrclak.com pattern from real Axios March 2026 attack.",
       "manifest": {
         "name": "lodash",
         "version": "4.17.23",
