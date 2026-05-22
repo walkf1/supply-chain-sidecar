@@ -49,7 +49,7 @@ def classify(manifest: dict) -> dict:
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_PROMPT,
                 temperature=0.1,
-                max_output_tokens=60,
+                max_output_tokens=500,
             ),
         )
         return _parse(response.text.strip())
@@ -66,7 +66,9 @@ def _parse(raw: str) -> dict:
         verdict = v.group(1).upper()
     if s:
         try:
-            p_malicious = float(s.group(1))
+            raw_score = float(s.group(1))
+            # SCORE is confidence in the verdict — invert if SAFE
+            p_malicious = raw_score if verdict == "MALICIOUS" else 1.0 - raw_score
         except ValueError:
             p_malicious = 1.0 if verdict == "MALICIOUS" else 0.0
     return {"verdict": verdict, "p_malicious": p_malicious, "raw": raw}

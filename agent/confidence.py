@@ -10,7 +10,7 @@ THRESHOLDS = {
 
 WEIGHTS = {
     "domain_age":     [(30, 0.70), (90, 0.30), (None, 0.00)],
-    "publish_method": {"manual_token": 0.50, "oidc": 0.00, "ci_cd": 0.00, "unknown": 0.20},
+    "publish_method": {"manual_token": 0.20, "oidc": 0.00, "ci_cd": 0.00, "unknown": 0.20},
     "git_tag":        {"missing": 0.40, "after_publish": 0.20, "before_publish": 0.00, "unknown": 0.10},
 }
 

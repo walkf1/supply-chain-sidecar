@@ -19,7 +19,7 @@ from elasticsearch import Elasticsearch
 ELASTIC_CLOUD_ID = os.getenv("ELASTIC_CLOUD_ID", "")
 ELASTIC_API_KEY = os.getenv("ELASTIC_API_KEY", "")
 ELASTIC_INDEX = os.getenv("ELASTIC_INDEX", "supply-chain-sidecar")
-NPM_REGISTRY = os.getenv("NPM_UPSTREAM", "https://registry.npmjs.org")
+NPM_REGISTRY = os.getenv("NPM_UPSTREAM", "https://registry.npmjs.org")  # always HTTPS
 CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "3600"))
 
 _es = None
@@ -44,8 +44,8 @@ def _get_cached(key: str) -> dict | None:
         doc = result["_source"]
         if time.time() - doc.get("cached_at", 0) < CACHE_TTL_SECONDS:
             return doc
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[elastic] cache read miss ({key}): {e}")
     return None
 
 
@@ -54,8 +54,8 @@ def _set_cached(key: str, doc: dict) -> None:
         es = _get_es()
         doc["cached_at"] = time.time()
         es.index(index=ELASTIC_INDEX, id=key, document=doc)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[elastic] cache write failed ({key}): {e}")
 
 
 def get_git_tag(name: str, version: str) -> dict:
@@ -66,7 +66,7 @@ def get_git_tag(name: str, version: str) -> dict:
         cached["source"] = "cache"
         return cached
 
-    result = {"exists": False, "status": "unknown", "source": "live"}
+    result = {"exists": False, "status": "missing", "source": "live"}
     try:
         resp = requests.get(f"{NPM_REGISTRY}/{name}/{version}", timeout=5)
         if resp.status_code == 200:
@@ -79,6 +79,7 @@ def get_git_tag(name: str, version: str) -> dict:
             repo = data.get("repository", {})
             result["repository"] = repo.get("url", "") if isinstance(repo, dict) else str(repo)
     except Exception as e:
+        result["status"] = "unknown"
         result["error"] = str(e)
 
     _set_cached(key, result)

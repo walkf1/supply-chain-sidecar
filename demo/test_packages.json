@@ -1,0 +1,89 @@
+{
+  "scenarios": [
+    {
+      "id": "axios_clean",
+      "label": "axios@1.14.0 — clean release",
+      "description": "Legitimate axios release. Published via GitHub Actions OIDC. Corresponding git tag exists. No dependency changes.",
+      "expected": "SAFE",
+      "manifest": {
+        "name": "axios",
+        "version": "1.14.0",
+        "description": "Promise based HTTP client for the browser and node.js",
+        "scripts": {
+          "test": "jest",
+          "build": "node ./bin/build.js",
+          "lint": "eslint lib"
+        },
+        "dependencies": {
+          "follow-redirects": "^1.15.6",
+          "form-data": "^4.0.0",
+          "proxy-from-env": "^1.1.0"
+        },
+        "maintainers": [
+          {"name": "jasonsaayman"},
+          {"name": "emilyemorehouse"},
+          {"name": "nicolo-ribaudo"}
+        ],
+        "license": "MIT"
+      }
+    },
+    {
+      "id": "axios_attack",
+      "label": "axios@1.14.1 — manifest-only hijack (Axios March 2026 pattern)",
+      "description": "Hijacked axios release. No git tag. Published manually with stolen npm token. Phantom dependency plain-crypto-js injected. Gemini catches the explicit signal (phantom dep). MCP confirms no git tag.",
+      "expected": "MALICIOUS",
+      "manifest": {
+        "name": "axios",
+        "version": "1.14.1",
+        "description": "Promise based HTTP client for the browser and node.js",
+        "scripts": {
+          "test": "jest",
+          "build": "node ./bin/build.js",
+          "lint": "eslint lib"
+        },
+        "dependencies": {
+          "follow-redirects": "^1.15.6",
+          "form-data": "^4.0.0",
+          "proxy-from-env": "^1.1.0",
+          "plain-crypto-js": "^4.2.1"
+        },
+        "maintainers": [
+          {"name": "jasonsaayman"},
+          {"name": "emilyemorehouse"},
+          {"name": "nicolo-ribaudo"}
+        ],
+        "license": "MIT"
+      }
+    },
+    {
+      "id": "lodash_clean",
+      "label": "lodash@4.17.21 — clean release",
+      "description": "Legitimate lodash release. Git tag v4.17.21 exists. No author field — consistent with all prior lodash releases.",
+      "expected": "SAFE",
+      "manifest": {
+        "name": "lodash",
+        "version": "4.17.21",
+        "description": "Lodash modular utilities.",
+        "scripts": {"test": "echo test"},
+        "dependencies": {},
+        "maintainers": [{"name": "jdalton"}, {"name": "mathias"}, {"name": "bnjmnt4n"}],
+        "license": "MIT"
+      }
+    },
+    {
+      "id": "lodash_attack",
+      "label": "lodash@4.17.22 — version-jump hijack",
+      "description": "Hijacked lodash release. No git tag for v4.17.22. Published manually. No suspicious content in manifest — Gemini sees nothing. Attack signal is entirely in registry metadata. MCP override blocks it.",
+      "expected": "SAFE_FROM_GEMINI_MALICIOUS_FROM_MCP",
+      "manifest": {
+        "name": "lodash",
+        "version": "4.17.22",
+        "description": "Lodash modular utilities.",
+        "scripts": {"test": "echo test"},
+        "dependencies": {},
+        "maintainers": [{"name": "jdalton"}, {"name": "mathias"}, {"name": "bnjmnt4n"}],
+        "license": "MIT"
+      }
+    }
+  ]
+}

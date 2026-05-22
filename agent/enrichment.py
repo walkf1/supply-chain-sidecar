@@ -1,4 +1,10 @@
-"""Enrichment orchestrator — triggers MCP when Gemini verdict is borderline."""
+"""Enrichment pipeline — MCP signal collection and Gemini re-ranking.
+
+Two distinct stages:
+  collect_signals() — fetches registry evidence via MCP, scores it
+  rerank()          — re-asks Gemini with evidence in context
+  enrich()          — orchestrates both (used by borderline path)
+"""
 
 import os
 import re
@@ -18,7 +24,8 @@ SYSTEM_PROMPT = (
 )
 
 
-def enrich(manifest: dict, initial_result: dict) -> dict:
+def collect_signals(manifest: dict) -> dict:
+    """Fetch MCP registry signals and score them. No Gemini call."""
     name = manifest.get("name", "unknown")
     version = manifest.get("version", "unknown")
     domain = _extract_domain(manifest)
@@ -36,7 +43,21 @@ def enrich(manifest: dict, initial_result: dict) -> dict:
     }
 
     scored = score(signals)
-    enriched_prompt = build_enriched_prompt(manifest, signals, scored)
+    return {
+        "signals": signals,
+        "enrichment_confidence": scored["enrichment_confidence"],
+        "contributions": scored["contributions"],
+        "evidence_summary": scored["evidence_summary"],
+    }
+
+
+def rerank(manifest: dict, collected: dict, initial_result: dict) -> dict:
+    """Re-ask Gemini with MCP evidence in context. Returns updated verdict."""
+    scored = {
+        "enrichment_confidence": collected["enrichment_confidence"],
+        "evidence_summary": collected["evidence_summary"],
+    }
+    enriched_prompt = build_enriched_prompt(manifest, collected["signals"], scored)
 
     try:
         client = _get_client()
@@ -47,6 +68,7 @@ def enrich(manifest: dict, initial_result: dict) -> dict:
                 system_instruction=SYSTEM_PROMPT,
                 temperature=0.1,
                 max_output_tokens=60,
+                timeout=15,
             ),
         )
         final = _parse(response.text.strip())
@@ -56,11 +78,23 @@ def enrich(manifest: dict, initial_result: dict) -> dict:
     return {
         "verdict": final["verdict"],
         "confidence": final["p_malicious"],
-        "enriched": True,
-        "signals": signals,
-        "enrichment_confidence": scored["enrichment_confidence"],
-        "evidence_summary": scored["evidence_summary"],
         "raw_response": final["raw"],
+    }
+
+
+def enrich(manifest: dict, initial_result: dict) -> dict:
+    """Full enrichment: collect signals then rerank with Gemini. Used for borderline path."""
+    collected = collect_signals(manifest)
+    reranked = rerank(manifest, collected, initial_result)
+
+    return {
+        "verdict": reranked["verdict"],
+        "confidence": reranked["confidence"],
+        "enriched": True,
+        "signals": collected["signals"],
+        "enrichment_confidence": collected["enrichment_confidence"],
+        "evidence_summary": collected["evidence_summary"],
+        "raw_response": reranked["raw_response"],
     }
 
 

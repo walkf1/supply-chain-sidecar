@@ -1,13 +1,25 @@
-"""Supply Chain Sidecar — /assess API."""
+"""Supply Chain Sidecar — /assess API.
+
+Two detection paths:
+  High-reputation packages  → MCP evidence overrides Gemini (collect_signals only)
+  Everything else           → Gemini score drives escalation to full enrich()
+"""
 
 import os
 from flask import Flask, request, jsonify
 from agent.gemini_classifier import classify
-from agent.enrichment import enrich
+from agent.enrichment import enrich, collect_signals
 from agent.confidence import get_thresholds
 
 app = Flask(__name__)
 SIDECAR_MODE = os.getenv("SIDECAR_MODE", "balanced")
+
+# Packages targeted by version-jump attacks — MCP evidence always runs
+HIGH_REP = {"lodash", "axios", "chalk", "express", "react", "typescript", "webpack", "babel"}
+
+# In Càrn's full pipeline this is Layer 3 — anything here has passed deterministic rules
+# and base model inference. For high-reputation packages, a missing git tag is a hard block.
+HIGH_REP_BLOCK_THRESHOLD = 0.40
 
 
 @app.route("/assess", methods=["POST"])
@@ -17,15 +29,38 @@ def assess():
     if not manifest:
         manifest = {"name": data.get("name", "unknown"), "version": data.get("version", "unknown")}
 
-    initial = classify(manifest)
-    p_mal = initial["p_malicious"]
+    name = manifest.get("name", "unknown")
     thresholds = get_thresholds(SIDECAR_MODE)
 
+    # High-reputation path: MCP evidence takes precedence over Gemini
+    if name in HIGH_REP:
+        initial = classify(manifest)
+        collected = collect_signals(manifest)
+        override = collected["enrichment_confidence"] >= HIGH_REP_BLOCK_THRESHOLD
+        # If MCP evidence isn't strong enough to block, default SAFE — Gemini is advisory only.
+        verdict = "MALICIOUS" if override else "SAFE"
+        return jsonify({
+            "verdict": verdict,
+            "confidence": collected["enrichment_confidence"] if override else 1.0 - collected["enrichment_confidence"],
+            "enriched": True,
+            "signals": collected["signals"],
+            "enrichment_confidence": collected["enrichment_confidence"],
+            "evidence_summary": collected["evidence_summary"],
+            "override_reason": "high-reputation package — MCP evidence takes precedence" if override else None,
+            "gemini_verdict": initial["verdict"],
+        })
+
+    # Standard path: Gemini score drives escalation
+    initial = classify(manifest)
+    p_mal = initial["p_malicious"]
+
     if p_mal >= thresholds["block"]:
-        return jsonify({"verdict": "MALICIOUS", "confidence": p_mal, "enriched": False, "evidence_summary": initial["raw"]})
+        return jsonify({"verdict": "MALICIOUS", "confidence": p_mal, "enriched": False,
+                        "evidence_summary": initial["raw"]})
 
     if p_mal < thresholds["escalate"]:
-        return jsonify({"verdict": "SAFE", "confidence": 1.0 - p_mal, "enriched": False, "evidence_summary": "Below escalation threshold."})
+        return jsonify({"verdict": "SAFE", "confidence": 1.0 - p_mal, "enriched": False,
+                        "evidence_summary": "Below escalation threshold."})
 
     result = enrich(manifest, initial)
     result["verdict"] = "MALICIOUS" if result["confidence"] >= thresholds["block"] else "SAFE"
