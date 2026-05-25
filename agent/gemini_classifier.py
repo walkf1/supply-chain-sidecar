@@ -12,7 +12,7 @@ from google.genai import types
 
 PROJECT_ID = os.getenv("GCP_PROJECT", "carn-vm-testing")
 LOCATION = os.getenv("GCP_LOCATION", "us-central1")
-MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 SYSTEM_PROMPT = (
     "You are a supply chain security classifier. "
