@@ -6,8 +6,13 @@ In March 2026, the axios npm package was compromised. The maintainer account was
 a single phantom dependency was injected, and a cross-platform RAT was deployed to every
 developer who ran `npm install axios` during the window it was live.
 
-The attack was caught by Aikido Security — but only after the fact. The package had already
-been downloaded thousands of times.
+The attack was caught by Aikido Security — their monitoring pipeline spotted the anomaly
+and published an advisory within minutes. In those minutes, the package was live and being
+downloaded by developers who had no idea.
+
+Aikido's advisory is what told the world the attack had happened. But a developer who ran
+`npm install axios` during that window — before the advisory existed — had no protection.
+The tarball reached their machine. The postinstall hook ran.
 
 What struck us about this attack was not the sophistication of the payload. It was the
 simplicity of the signal. The attacker domain was registered three days before publish.
@@ -17,7 +22,8 @@ rather than the CI/CD pipeline that had published every prior release.
 None of that information is in the package.json. An AI classifier operating on manifest
 content alone cannot see it. The signal is entirely in the registry metadata.
 
-That is the problem Supply Chain Sidecar is built to solve.
+That is the problem Supply Chain Sidecar is built to solve — not detection after the fact,
+but blocking the install before the tarball reaches the machine.
 
 ---
 
@@ -48,6 +54,16 @@ The demo shows this working on the real axios@1.14.1 attack and a modelled lodas
 version-jump hijack. In the lodash scenario, Gemini returns SAFE — the manifest is
 identical to a legitimate release. MCP finds no git tag for that version and overrides
 the verdict to MALICIOUS.
+
+**How this differs from existing tools**
+
+Platforms like Aikido operate at the registry monitoring layer — they watch for anomalies,
+publish advisories, and notify teams. That is a valuable and necessary part of the
+ecosystem. Supply Chain Sidecar operates at a different point entirely: the proxy intercept
+layer, between the developer's machine and the registry. There is no advisory pipeline,
+no notification latency, no window. The block happens at install time. The two approaches
+are complementary — Aikido is the industry intelligence layer, Supply Chain Sidecar is the
+enforcement layer at the point of install.
 
 ---
 
@@ -156,6 +172,12 @@ The confidence scoring approach — weighted signals assembled into a single sco
 drives the override decision — turned out to be the right abstraction. It makes the
 agent's reasoning transparent and auditable, and it gives security teams a single
 threshold to configure rather than a set of opaque model parameters.
+
+The relationship to existing security tooling also became clearer during the build.
+Registry monitoring platforms catch attacks and publish advisories — that is detection.
+Supply Chain Sidecar blocks the install before the tarball reaches the machine — that is
+enforcement. A team running both gets detection with an audit trail and enforcement at
+the point of install. Neither replaces the other.
 
 ---
 
